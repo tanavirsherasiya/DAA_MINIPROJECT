@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Expense Tracker (DAA)</title>
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #1c1c1e;
+        --card: #f3f4f6;
+        --ac: #0d9488;
+        --mut: #6b7280;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121214;
+          --fg: #f2f2f3;
+          --card: #1f2024;
+          --ac: #2dd4bf;
+          --mut: #9ca3af;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 14px;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      h1 {
+        font-size: 19px;
+        margin: 0 0 10px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 12px;
+        margin: 10px 0;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 9px;
+        margin: 3px 0;
+        border-radius: 8px;
+        border: 1px solid var(--mut);
+        background: var(--bg);
+        color: var(--fg);
+        font-size: 15px;
+      }
+      .r {
+        display: flex;
+        gap: 6px;
+      }
+      .r > * {
+        flex: 1;
+      }
+      button {
+        background: var(--ac);
+        color: #000;
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        margin: 4px 4px 4px 0;
+        font-weight: 600;
+      }
+      button.g {
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--mut);
+      }
+      .sc {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+      }
+      td,
+      th {
+        padding: 4px 8px;
+        border-bottom: 1px solid var(--mut);
+        text-align: left;
+        white-space: nowrap;
+      }
+      .info {
+        color: var(--mut);
+        font-size: 13px;
+      }
+      b.k {
+        color: var(--ac);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Student Expense Tracker (DAA)</h1>
+
+    <div class="card">
+      <h2>1. Expense add karo</h2>
+      <input id="n" placeholder="Naam (e.g. Chai)" />
+      <div class="r">
+        <input id="a" type="number" placeholder="Amount ₹" /><input
+          id="d"
+          type="date"
+        />
+      </div>
+      <select id="c">
+        <option>Food</option>
+        <option>Travel</option>
+        <option>Books</option>
+        <option>Fun</option>
+        <option>Other</option>
+      </select>
+      <button id="add">Add</button><button class="g" id="demo">Demo data</button
+      ><button class="g" id="clr">Clear</button>
+    </div>
+
+    <div class="card">
+      <h2>2. Expenses list</h2>
+      <button id="ms">Merge Sort: Amount</button
+      ><button id="md">Merge Sort: Date</button>
+      <div id="sortinfo" class="info"></div>
+      <div class="sc" id="list"></div>
+    </div>
+
+    <div class="card">
+      <h2>3. Binary Search (date se)</h2>
+      <div class="r">
+        <input id="sd" type="date" /><button id="bs">Search</button>
+      </div>
+      <div id="bsout" class="info"></div>
+    </div>
+
+    <div class="card">
+      <h2>4. Top-K kharche (Max-Heap)</h2>
+      <div class="r">
+        <input id="k" type="number" value="3" min="1" /><button id="hp">
+          Show
+        </button>
+      </div>
+      <div id="hpout" class="info"></div>
+    </div>
+
+    <div class="card">
+      <h2>5. Category total (Hashing)</h2>
+      <button id="hs">Calculate</button>
+      <div id="hsout" class="info"></div>
+    </div>
+
+    <div class="card">
+      <h2>6. Budget Planner (0/1 Knapsack DP)</h2>
+      <input
+        id="bud"
+        type="number"
+        placeholder="Budget ₹ (e.g. 3000)"
+        value="3000"
+      />
+      <div class="info">
+        Har expense ke saath importance (1-10) do, phir DP se best choose hoga.
+      </div>
+      <div id="imp"></div>
+      <button id="kn">Plan banao</button>
+      <div id="knout" class="info"></div>
+    </div>
+
+    
+<script>
+  // All expenses are stored in this array
+  var expenses = [];
+  var nextId = 1;
+  var comparisons = 0;
+
+  // Short way to select an HTML element by its ID
+  function get(id) {
+    return document.getElementById(id);
+  }
+
+  // Make user-entered text safe to display in HTML
+  function safeText(text) {
+    return String(text).replace(/[&<>]/g, function (ch) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;"
+      }[ch];
+    });
+  }
+
+  // =====================================
+  // 1. MERGE SORT
+  // =====================================
+
+  function mergeSort(arr, key) {
+    if (arr.length <= 1) {
+      return arr;
+    }
+
+    var middle = Math.floor(arr.length / 2);
+
+    var left = mergeSort(arr.slice(0, middle), key);
+    var right = mergeSort(arr.slice(middle), key);
+
+    var result = [];
+    var i = 0;
+    var j = 0;
+
+    // Compare elements from both halves
+    while (i < left.length && j < right.length) {
+      comparisons++;
+
+      if (left[i][key] <= right[j][key]) {
+        result.push(left[i]);
+        i++;
+      } else {
+        result.push(right[j]);
+        j++;
+      }
+    }
+
+    // Add remaining elements
+    while (i < left.length) {
+      result.push(left[i]);
+      i++;
+    }
+
+    while (j < right.length) {
+      result.push(right[j]);
+      j++;
+    }
+
+    return result;
+  }
+
+  // =====================================
+  // DISPLAY EXPENSES AND IMPORTANCE INPUTS
+  // =====================================
+
+  function render() {
+    var html = "<table>";
+    html += "<tr><th>#</th><th>Naam</th><th>₹</th>";
+    html += "<th>Date</th><th>Category</th></tr>";
+
+    for (var i = 0; i < expenses.length; i++) {
+      var e = expenses[i];
+
+      html += "<tr>";
+      html += "<td>" + (i + 1) + "</td>";
+      html += "<td>" + safeText(e.n) + "</td>";
+      html += "<td>" + e.a + "</td>";
+      html += "<td>" + e.d + "</td>";
+      html += "<td>" + safeText(e.c) + "</td>";
+      html += "</tr>";
+    }
+
+    html += "</table>";
+
+    if (expenses.length === 0) {
+      get("list").innerHTML =
+        '<span class="info">Koi expense nahi hai.</span>';
+    } else {
+      get("list").innerHTML = html;
+    }
+
+    // Show importance input for every expense
+    var importanceHTML = "";
+
+    for (var i = 0; i < expenses.length; i++) {
+      var e = expenses[i];
+
+      importanceHTML +=
+        '<div class="r">' +
+        '<div style="flex:3">' +
+        safeText(e.n) + " (₹" + e.a + ")" +
+        '</div>' +
+        '<input style="flex:1" type="number" min="1" max="10"' +
+        ' value="' + e.imp + '"' +
+        ' data-id="' + e.id + '" class="impin">' +
+        '</div>';
+    }
+
+    get("imp").innerHTML = importanceHTML;
+
+    // Save changed importance values
+    var inputs = document.querySelectorAll(".impin");
+
+    inputs.forEach(function (input) {
+      input.onchange = function () {
+        for (var i = 0; i < expenses.length; i++) {
+          if (expenses[i].id == input.dataset.id) {
+            expenses[i].imp = Number(input.value) || 1;
+            break;
+          }
+        }
+      };
+    });
+  }
+
+  // =====================================
+  // ADD AN EXPENSE
+  // =====================================
+
+  get("add").onclick = function () {
+    var name = get("n").value;
+    var amount = Number(get("a").value);
+    var date = get("d").value;
+    var category = get("c").value;
+
+    if (!name || !amount || !date) {
+      alert("Naam, amount aur date bharo");
+      return;
+    }
+
+    expenses.push({
+      id: nextId++,
+      n: name,
+      a: amount,
+      d: date,
+      c: category,
+      imp: 5
+    });
+
+    get("n").value = "";
+    get("a").value = "";
+
+    render();
+  };
+
+  // =====================================
+  // ADD DEMO DATA
+  // =====================================
+
+  get("demo").onclick = function () {
+    var demoExpenses = [
+      ["Mess fees", 1500, "2026-10-02", "Food", 10],
+      ["Books", 800, "2026-10-05", "Books", 8],
+      ["Movie", 500, "2026-10-09", "Fun", 4],
+      ["Bus pass", 300, "2026-10-12", "Travel", 7],
+      ["Trip", 1200, "2026-10-18", "Travel", 6],
+      ["Chai", 150, "2026-10-20", "Food", 3]
+    ];
+
+    for (var i = 0; i < demoExpenses.length; i++) {
+      var item = demoExpenses[i];
+
+      expenses.push({
+        id: nextId++,
+        n: item[0],
+        a: item[1],
+        d: item[2],
+        c: item[3],
+        imp: item[4]
+      });
+    }
+
+    render();
+  };
+
+  // =====================================
+  // CLEAR ALL DATA
+  // =====================================
+
+  get("clr").onclick = function () {
+    expenses = [];
+    render();
+
+    var outputIds = [
+      "sortinfo", "bsout", "hpout", "hsout", "knout"
+    ];
+
+    for (var i = 0; i < outputIds.length; i++) {
+      get(outputIds[i]).innerHTML = "";
+    }
+  };
+
+  // =====================================
+  // SORT BY AMOUNT OR DATE
+  // =====================================
+
+  function sortExpenses(key) {
+    comparisons = 0;
+    expenses = mergeSort(expenses, key);
+
+    render();
+
+    get("sortinfo").innerHTML =
+      'Merge Sort done. Comparisons: <b class="k">' +
+      comparisons +
+      "</b> | n = " + expenses.length +
+      " | Complexity O(n log n)";
+  }
+
+  get("ms").onclick = function () {
+    sortExpenses("a");
+  };
+
+  get("md").onclick = function () {
+    sortExpenses("d");
+  };
+
+  // =====================================
+  // 2. BINARY SEARCH BY DATE
+  // =====================================
+
+  get("bs").onclick = function () {
+    // Sort a copy by date; original list remains unchanged
+    var sorted = mergeSort(expenses.slice(), "d");
+    var targetDate = get("sd").value;
+
+    var low = 0;
+    var high = sorted.length - 1;
+    var found = -1;
+    var steps = [];
+
+    while (low <= high) {
+      var mid = Math.floor((low + high) / 2);
+
+      steps.push(
+        "low=" + low +
+        ", high=" + high +
+        ", mid=" + mid +
+        " (" + sorted[mid].d + ")"
+      );
+
+      if (sorted[mid].d === targetDate) {
+        found = mid;
+        break;
+      } else if (sorted[mid].d < targetDate) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    var output = steps.join("<br>") + "<br>";
+
+    if (found === -1) {
+      output += '<b class="k">Nahi mila</b>';
+    } else {
+      var matching = [];
+
+      // Find all expenses with the same date
+      for (var i = found; i >= 0; i--) {
+        if (sorted[i].d !== targetDate) break;
+        matching.push(sorted[i]);
+      }
+
+      for (var i = found + 1; i < sorted.length; i++) {
+        if (sorted[i].d !== targetDate) break;
+        matching.push(sorted[i]);
+      }
+
+      output += '<b class="k">Mila:</b> ';
+
+      output += matching.map(function (e) {
+        return safeText(e.n) + " ₹" + e.a;
+      }).join(", ");
+    }
+
+    get("bsout").innerHTML =
+      output + "<br>Steps: " + steps.length + " | O(log n)";
+  };
+
+  // =====================================
+  // 3. MAX-HEAP: FIND TOP-K EXPENSES
+  // =====================================
+
+  function heapify(heap, size, parent) {
+    var largest = parent;
+    var left = 2 * parent + 1;
+    var right = 2 * parent + 2;
+
+    // Check whether left child is larger
+    if (left < size && heap[left].a > heap[largest].a) {
+      largest = left;
+    }
+
+    // Check whether right child is larger
+    if (right < size && heap[right].a > heap[largest].a) {
+      largest = right;
+    }
+
+    // Move the largest element to the parent position
+    if (largest !== parent) {
+      var temp = heap[parent];
+      heap[parent] = heap[largest];
+      heap[largest] = temp;
+
+      heapify(heap, size, largest);
+    }
+  }
+
+  get("hp").onclick = function () {
+    var heap = expenses.slice();
+    var size = heap.length;
+
+    var k = Math.min(Number(get("k").value) || 1, size);
+    var result = [];
+
+    // Build a Max-Heap
+    for (var i = Math.floor(size / 2) - 1; i >= 0; i--) {
+      heapify(heap, size, i);
+    }
+
+    // Extract the largest amount K times
+    for (var i = 0; i < k; i++) {
+      result.push(heap[0]);
+
+      heap[0] = heap[size - 1];
+      size--;
+
+      heapify(heap, size, 0);
+    }
+
+    get("hpout").innerHTML =
+      result.map(function (e, i) {
+        return (i + 1) + ". " + safeText(e.n) +
+          ' <b class="k">₹' + e.a + "</b>";
+      }).join("<br>") +
+      "<br>O(n + k log n)";
+  };
+
+  // =====================================
+  // 4. HASHING: CATEGORY-WISE TOTAL
+  // =====================================
+
+  get("hs").onclick = function () {
+    var totals = {};
+    var grandTotal = 0;
+
+    for (var i = 0; i < expenses.length; i++) {
+      var e = expenses[i];
+
+      if (!totals[e.c]) {
+        totals[e.c] = 0;
+      }
+
+      totals[e.c] += e.a;
+      grandTotal += e.a;
+    }
+
+    var output = "";
+
+    for (var category in totals) {
+      var amount = totals[category];
+
+      var percentage = grandTotal
+        ? ((amount * 100) / grandTotal).toFixed(0)
+        : 0;
+
+      output +=
+        safeText(category) +
+        ': <b class="k">₹' + amount + "</b> (" +
+        percentage + "%)<br>";
+    }
+
+    get("hsout").innerHTML =
+      output + "Total: ₹" + grandTotal + " | O(n)";
+  };
+
+  // =====================================
+  // 5. DYNAMIC PROGRAMMING: 0/1 KNAPSACK
+  // =====================================
+
+  get("kn").onclick = function () {
+    var budget = Math.floor(Number(get("bud").value) / 50);
+
+    // Convert expense amounts into units of ₹50
+    var items = [];
+
+    for (var i = 0; i < expenses.length; i++) {
+      items.push({
+        expense: expenses[i],
+        weight: Math.max(1, Math.round(expenses[i].a / 50))
+      });
+    }
+
+    var n = items.length;
+
+    if (n === 0 || budget < 1) {
+      get("knout").innerHTML = "Expenses ya budget daalo.";
+      return;
+    }
+
+    // Create DP table filled with zeros
+    var dp = [];
+
+    for (var i = 0; i <= n; i++) {
+      dp.push(new Array(budget + 1).fill(0));
+    }
+
+    // Fill the DP table
+    for (var i = 1; i <= n; i++) {
+      for (var w = 0; w <= budget; w++) {
+
+        // Option 1: Do not select this expense
+        dp[i][w] = dp[i - 1][w];
+
+        // Option 2: Select this expense if it fits
+        if (items[i - 1].weight <= w) {
+          var importance =
+            items[i - 1].expense.imp;
+
+          var value =
+            dp[i - 1][w - items[i - 1].weight] +
+            importance;
+
+          dp[i][w] = Math.max(dp[i][w], value);
+        }
+      }
+    }
+
+    // Trace back through the DP table
+    var w = budget;
+    var selected = [];
+
+    for (var i = n; i > 0; i--) {
+      if (dp[i][w] !== dp[i - 1][w]) {
+        selected.push(items[i - 1].expense);
+        w -= items[i - 1].weight;
+      }
+    }
+
+    var totalCost = 0;
+
+    for (var i = 0; i < selected.length; i++) {
+      totalCost += selected[i].a;
+    }
+
+    var output = '<b class="k">Chuno:</b><br>';
+
+    for (var i = 0; i < selected.length; i++) {
+      var e = selected[i];
+
+      output += safeText(e.n) +
+        " ₹" + e.a +
+        " (importance " + e.imp + ")<br>";
+    }
+
+    output +=
+      "Total cost: ₹" + totalCost +
+      ' | Total importance: <b class="k">' +
+      dp[n][budget] + "</b>" +
+      "<br>Table size: " + (n + 1) +
+      " × " + (budget + 1) +
+      " | O(n × W) (amounts ₹50 ke units me)";
+
+    get("knout").innerHTML = output;
+  };
+
+  // Display the initial empty list
+  render();
+</script>
+
+  </body>
+</html>
